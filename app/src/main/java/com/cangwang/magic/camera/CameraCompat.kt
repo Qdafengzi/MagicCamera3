@@ -177,11 +177,7 @@ abstract class CameraCompat(protected var mContext: Context) {
 
         fun newInstance(context: Context): CameraCompat {
             val api = Build.VERSION.SDK_INT
-            return if (api >= 21) {
-                CameraCompatV21(context)
-            } else {
-                CameraCompatV19(context)
-            }
+            return  CameraCompatV21(context)
 //                    return CameraCompatV19(context)
         }
     }

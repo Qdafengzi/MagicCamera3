@@ -5,6 +5,7 @@ import android.content.pm.ActivityInfo
 import android.graphics.Point
 import android.hardware.Camera
 import android.os.Bundle
+import android.view.LayoutInflater
 import android.view.SurfaceHolder
 import android.view.View
 import android.view.Window
@@ -13,9 +14,9 @@ import android.widget.RelativeLayout
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.PermissionChecker
+import com.cangwang.magic.databinding.ActivityCameraBinding
 import com.cangwang.magic.util.CameraHelper
 import com.cangwang.magic.view.CameraSurfaceCallback
-import kotlinx.android.synthetic.main.activity_camera.*
 
 /**
  * Created by cangwang on 2018/9/12.
@@ -30,12 +31,16 @@ class CameraActivity:AppCompatActivity(){
 
     var mCameraId = Camera.CameraInfo.CAMERA_FACING_BACK
 
+    lateinit var  binding:ActivityCameraBinding
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         window.setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN)
         requestWindowFeature(Window.FEATURE_NO_TITLE)
         requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
-        setContentView(R.layout.activity_camera)
+        binding =  ActivityCameraBinding.inflate(LayoutInflater.from(this))
+        setContentView(binding.root)
+
         if (PermissionChecker.checkSelfPermission(this, Manifest.permission.CAMERA) == PermissionChecker.PERMISSION_DENIED) run {
             ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.CAMERA),CAMERA_PERMISSION_REQ)
         }else {
@@ -45,28 +50,29 @@ class CameraActivity:AppCompatActivity(){
 
 
     fun initView(){
-        btn_camera_filter.visibility = View.GONE
-        btn_camera_shutter.visibility = View.GONE
 
-        btn_camera_switch.setOnClickListener {
+        binding.btnCameraFilter.visibility = View.GONE
+        binding.btnCameraShutter.visibility = View.GONE
+
+        binding.btnCameraSwitch.setOnClickListener {
 
         }
 
-        btn_camera_mode.visibility = View.GONE
-        btn_camera_beauty.visibility = View.GONE
+        binding.btnCameraMode.visibility = View.GONE
+        binding.btnCameraBeauty.visibility = View.GONE
 
         val screenSize =Point()
         windowManager.defaultDisplay.getSize(screenSize)
-        val params = glsurfaceview_camera.layoutParams as RelativeLayout.LayoutParams
+        val params =binding.glsurfaceviewCamera.layoutParams as RelativeLayout.LayoutParams
         params.width= screenSize.x;
         params.height = screenSize.x* 16/9
-        glsurfaceview_camera.layoutParams = params
+        binding.glsurfaceviewCamera.layoutParams = params
     }
 
     override fun onResume() {
         super.onResume()
-        mCamera = openCamera(glsurfaceview_camera.holder)
-        glsurfaceview_camera.holder.addCallback(CameraSurfaceCallback(mCamera))
+        mCamera = openCamera(binding.glsurfaceviewCamera.holder)
+        binding.glsurfaceviewCamera.holder.addCallback(CameraSurfaceCallback(mCamera))
     }
 
     override fun onPause() {

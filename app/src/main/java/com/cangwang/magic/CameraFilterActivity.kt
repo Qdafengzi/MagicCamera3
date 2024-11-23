@@ -4,11 +4,13 @@ import android.Manifest
 import android.animation.Animator
 import android.animation.AnimatorListenerAdapter
 import android.animation.ObjectAnimator
+import android.annotation.SuppressLint
 import android.app.AlertDialog
 import android.content.pm.ActivityInfo
 import android.graphics.Point
 import android.hardware.Camera
 import android.os.Bundle
+import android.view.LayoutInflater
 import android.view.SurfaceHolder
 import android.view.View
 import android.view.Window
@@ -19,11 +21,10 @@ import androidx.core.app.ActivityCompat
 import androidx.core.content.PermissionChecker
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.cangwang.magic.adapter.FilterAdapter
+import com.cangwang.magic.databinding.ActivityCameraBinding
 import com.cangwang.magic.util.CameraHelper
 import com.cangwang.magic.util.OpenGLJniLib
 import com.cangwang.magic.view.CameraFilterSurfaceCallback
-import kotlinx.android.synthetic.main.activity_camera.*
-import kotlinx.android.synthetic.main.filter_layout.*
 
 /**
  * Created by cangwang on 2018/9/12.
@@ -45,14 +46,17 @@ class CameraFilterActivity: AppCompatActivity(){
     var mAspectRatio = ASPECT_RATIO_ARRAY[0]
 
     var mCameraId = Camera.CameraInfo.CAMERA_FACING_BACK
-
+    lateinit var  binding: ActivityCameraBinding
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 //        window.setFlags(WindowManager.LayoutParams.FLAG_HARDWARE_ACCELERATED, WindowManager.LayoutParams.FLAG_HARDWARE_ACCELERATED)
         window.setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN)
         requestWindowFeature(Window.FEATURE_NO_TITLE)
         requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
-        setContentView(R.layout.activity_camera)
+        binding =  ActivityCameraBinding.inflate(LayoutInflater.from(this))
+        setContentView(binding.root)
+        
+        
         if (PermissionChecker.checkSelfPermission(this, Manifest.permission.CAMERA) == PermissionChecker.PERMISSION_DENIED) run {
             ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.CAMERA),CAMERA_PERMISSION_REQ)
         }else {
@@ -75,34 +79,38 @@ class CameraFilterActivity: AppCompatActivity(){
     private val types = OpenGLJniLib.getFilterTypes()
 
     fun initView(){
-        filter_listView.layoutManager = LinearLayoutManager(this,LinearLayoutManager.HORIZONTAL,false)
+
+        binding.layoutFilter.filterListView.layoutManager = LinearLayoutManager(this,LinearLayoutManager.HORIZONTAL,false)
         mAdapter = FilterAdapter(this, types)
         mAdapter?.filterListener= object:FilterAdapter.onFilterChangeListener{
             override fun onFilterChanged(type: Int) {
                 mSurfaceCallback?.setFilterType(type)
             }
         }
-        filter_listView.adapter= mAdapter
-        btn_camera_filter.setOnClickListener {
+        binding.layoutFilter.filterListView.adapter= mAdapter
+
+        binding.btnCameraFilter.setOnClickListener {
             showFilters()
         }
-        btn_camera_closefilter.setOnClickListener {
+        
+        binding.layoutFilter.btnCameraClosefilter.setOnClickListener {
             hideFilters()
         }
 
-        btn_camera_shutter.setOnClickListener {
+
+        binding.btnCameraShutter.setOnClickListener {
             takePhoto()
         }
 
-        btn_camera_switch.setOnClickListener {
+        binding.btnCameraSwitch.setOnClickListener {
             switchCamera()
         }
 
-        btn_camera_mode.setOnClickListener {
+        binding.btnCameraMode.setOnClickListener {
 
         }
 
-        btn_camera_beauty.setOnClickListener {
+        binding.btnCameraBeauty.setOnClickListener {
             AlertDialog.Builder(this)
                     .setSingleChoiceItems(arrayOf("关闭", "1", "2", "3", "4", "5"), beautyLevel) {
                         dialog, which ->
@@ -115,10 +123,11 @@ class CameraFilterActivity: AppCompatActivity(){
         }
         val screenSize =Point()
         windowManager.defaultDisplay.getSize(screenSize)
-        val params = glsurfaceview_camera.layoutParams as RelativeLayout.LayoutParams
+        
+        val params = binding.glsurfaceviewCamera.layoutParams as RelativeLayout.LayoutParams
         params.width= screenSize.x
         params.height = screenSize.x* 16/9
-        glsurfaceview_camera.layoutParams = params
+        binding.glsurfaceviewCamera.layoutParams = params
 
     }
 
@@ -129,9 +138,9 @@ class CameraFilterActivity: AppCompatActivity(){
 
     private fun initCamera(){
         releaseCamera()
-        mCamera = openCamera(glsurfaceview_camera.holder)
+        mCamera = openCamera(binding.glsurfaceviewCamera.holder)
         mSurfaceCallback = CameraFilterSurfaceCallback(mCamera)
-        glsurfaceview_camera.holder.addCallback(mSurfaceCallback)
+        binding.glsurfaceviewCamera.holder.addCallback(mSurfaceCallback)
     }
 
     override fun onPause() {
@@ -172,7 +181,7 @@ class CameraFilterActivity: AppCompatActivity(){
     fun switchCamera(){
         mCameraId = if (mCameraId == Camera.CameraInfo.CAMERA_FACING_BACK ) Camera.CameraInfo.CAMERA_FACING_FRONT else Camera.CameraInfo.CAMERA_FACING_BACK
         releaseCamera()
-        mCamera = openCamera(glsurfaceview_camera.holder)
+        mCamera = openCamera(binding.glsurfaceviewCamera.holder)
         mSurfaceCallback?.changeCamera(mCamera)
     }
 
@@ -202,32 +211,35 @@ class CameraFilterActivity: AppCompatActivity(){
         return mCamera
     }
 
+    @SuppressLint("ObjectAnimatorBinding")
     private fun showFilters() {
-        val animator = ObjectAnimator.ofInt(layout_filter, "translationY", layout_filter.height, 0)
+
+        val animator = ObjectAnimator.ofInt(binding.layoutFilter.root, "translationY", binding.layoutFilter.root.height, 0)
         animator.duration = 200
         animator.addListener(object :AnimatorListenerAdapter(){
             override fun onAnimationStart(animation: Animator) {
                 findViewById<View>(R.id.btn_camera_shutter).isClickable = false
-                layout_filter.visibility = View.VISIBLE
+                binding.layoutFilter.root.visibility = View.VISIBLE
             }
         })
 
         animator.start()
     }
 
+    @SuppressLint("ObjectAnimatorBinding")
     private fun hideFilters() {
-        val animator = ObjectAnimator.ofInt(layout_filter, "translationY", 0, layout_filter.height)
+        val animator = ObjectAnimator.ofInt(binding.layoutFilter.root, "translationY", 0, binding.layoutFilter.root.height)
         animator.duration = 200
         animator.addListener(object :AnimatorListenerAdapter(){
             override fun onAnimationEnd(animation: Animator) {
                 // TODO Auto-generated method stub
-                layout_filter.visibility = View.INVISIBLE
+                binding.layoutFilter.root.visibility = View.INVISIBLE
                 findViewById<View>(R.id.btn_camera_shutter).isClickable = true
             }
 
             override fun onAnimationCancel(animation: Animator) {
                 // TODO Auto-generated method stub
-                layout_filter.visibility = View.INVISIBLE
+                binding.layoutFilter.root.visibility = View.INVISIBLE
                 findViewById<View>(R.id.btn_camera_shutter).isClickable = true
             }
         })
